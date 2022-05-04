@@ -1,0 +1,324 @@
+:css
+  h2 {
+    margin-bottom: 20px;
+  }
+
+  h5 {
+    font-size: 1.2em;
+  }
+
+  .report_config td {
+    padding: 20px;
+    margin: 20px;
+  }
+
+  .debug {
+    background-color: #a8c550;
+    padding: 10px;
+    margin: 5px;
+  }
+
+  .clear {
+    clear: both;
+  }
+
+  .wrapper {
+    width: 80%;
+  }
+
+  .custom-report-table {
+    display: table;
+    margin-left: 2%;
+  }
+
+  .custom-report-row {
+    display: table-row;
+  }
+
+  .custom-report-cell {
+    width: 50%;
+    display: table-cell;
+    padding: 5px;
+  }
+
+  .filter-group {
+    float: left;
+  }
+
+  .custom-report-table h4.section-title {
+    margin-left: 5px;
+    font-weight: bold;
+  }
+
+  .warning-tag p {
+    color: red;
+    font-weight: bold;
+  }
+
+:javascript
+  // angular.module('dataExports').controller('DataExportsController', function($scope, $location, DataExportsService, MessageCenterService, $interval, $timeout) {
+  // angular.module('dataExports').controller('DataExportsController', function($scope, $location, $interval, $timeout) {
+  //   console.log("sdf");
+  // });
+
+  // var app = angular.module("platform-app", []);
+  // var app = angular.module("platform-app", []);
+
+  platformApp.service("DataExportsService", function($http) {
+    const baseApiUrl = "http://localhost:3000"; // load it from settings
+    const jwt = getCookie("current_jwt");
+
+    return {
+      clients_url: `${baseApiUrl}/data_exports/clients`,
+      projects_url: `${baseApiUrl}/data_exports/projects`,
+      project_url: `${baseApiUrl}/data_exports/project`,
+      report_url: `${baseApiUrl}/data_exports`,
+      data: {},
+
+      fetchClients: function(callback) {
+        this.isLoaded = false;
+        return $http.get(this.clients_url, { headers: { "Authorization": `Bearer ${jwt}` } }).success((function(_this) {
+          return function(data) {
+            _this.data.clients = data;
+            _this.isLoaded = true;
+            return callback(_this.data.clients);
+          };
+        })(this));
+      },
+
+      fetchProjects: function(clientId, callback) {
+        this.isLoaded = false;
+        return $http.get(this.projects_url, {
+          params: {
+            client_id: clientId
+          },
+          headers: {
+            "Authorization": `Bearer ${jwt}`
+          }
+        }).success((function(_this) {
+          return function(data) {
+            _this.data.projects = data;
+            _this.isLoaded = true;
+            return callback(_this.data.projects);
+          };
+        })(this));
+      },
+
+      fetchProjectData: function(projectUid, callback) {
+        this.isLoaded = false;
+        return $http.get(this.project_url, {
+          params: {
+            project_uid: projectUid
+          },
+          headers: {
+            "Authorization": `Bearer ${jwt}`
+          }
+        }).success((function(_this) {
+          return function(data) {
+            _this.data.projectData = data;
+            _this.isLoaded = true;
+            return callback(_this.data.projectData);
+          };
+        })(this));
+      },
+
+      getDownload: function(params) {
+        $http.get(this.report_url, {
+          headers: { "Authorization": `Bearer ${jwt}` },
+          params: {
+            "format": "csv",
+            "client_id": params.client_id,
+            "project_id": params.project_id,
+            "report_type": params.report_type,
+            "since_date": params.since_date
+          }
+        });
+      }
+    };
+  });
+
+  // angular.module("dataExports").controller("dataExportsController", function($scope, $location, DataExportsService, MessageCenterService, $interval, $timeout) {
+  platformApp.controller("DataExportsController", function($scope, $location, DataExportsService) {
+    console.log("DataExportsController Loaded...");
+
+    $scope.clients = [];
+    $scope.selectedClient = {};
+    $scope.projects = [];
+    $scope.selectedProject = {};
+    $scope.projectData = {};
+    $scope.clientsLoaded = false;
+    $scope.projectsLoaded = false;
+    $scope.projectSelected = false;
+    $scope.projectDataLoaded = false;
+    $scope.projectDataSelected = false;
+    $scope.clientSelected = false;
+
+    DataExportsService.fetchClients(function(clients) {
+      $scope.clients = clients;
+      $scope.selectedClient = ($location.search().client_id ? ($scope.clients.filter(function(client) {
+        return client.id === parseInt($location.search().client_id);
+      }))[0] : {});
+      $scope.clientsLoaded = true;
+      return $scope.$broadcast('chosenChanged');
+    });
+
+    $scope.loadClientProjects = function() {
+      $scope.projectSelected = false;
+      $scope.projectsLoaded = false;
+      return DataExportsService.fetchProjects($scope.selectedClient.id, function(projects) {
+        $scope.projectsLoaded = true;
+        $scope.projects = projects;
+        return $scope.$broadcast('chosenChanged');
+      });
+    };
+
+    $scope.loadProjectData = function(selectedProject) {
+      $scope.projectSelected = !!selectedProject;
+      $scope.projectDataLoaded = false;
+      if ($scope.selectedProject) {
+        return DataExportsService.fetchProjectData($scope.selectedProject.uid, function(projectData) {
+          $scope.projectData = projectData;
+          $scope.projectDataLoaded = true;
+          return $scope.$broadcast('chosenChanged');
+        });
+      }
+    };
+
+    $scope.isReportSelected = function(reportType) {
+      return $scope.reportType === reportType;
+    };
+
+    $scope.setReportType = function(reportType) {
+      return $scope.reportType = reportType;
+    };
+
+    $scope.getDownload = function getDownload() {
+      DataExportsService.getDownload({
+        "client_id": $scope.selectedClient.id,
+        "project_id": $scope.selectedProject.id,
+        "report_type": $scope.reportType,
+        "since_date": $scope.dateRange
+      });
+      return false;
+    }
+  });
+
+
+.wrapper
+  %h2 <b>Project data report</b>
+
+  %h5 Use this report to download all of the data associated with a project. This will allow you to analyse the participant details and overall transcript. It will also allow you to report on all of the tags set up for the project.
+
+  %div{ 'ng-controller': 'DataExportsController', 'ng-cloak': '' }
+    =# form_tag data_exports_path, method: :get, format: 'csv' do |form|
+    %form
+      %input{ name: 'format', type: 'hidden', value: 'csv' }
+      %table.report_config
+        %tr
+          %td
+            %div{ 'ng-show': 'clientsLoaded' }
+              %p Please select a client
+              %select.chzn-select{ name: 'client_id', 'ng-options': 'client.name for client in clients track by client.id', 'ng-model': 'selectedClient', 'ng-change': 'loadClientProjects()', 'ng-update-chosen': '', 'data-placeholder': 'Select a Client' }
+          %td
+            %div{ 'ng-show': 'clientsLoaded && projectsLoaded' }
+              %p Please select a project
+              %select.chzn-select{ name: 'project_id', 'ng-options': 'project.name for project in projects track by project.id', 'ng-model': 'selectedProject', 'ng-change': 'loadProjectData(selectedProject)', 'ng-update-chosen': '', 'data-placeholder': 'Select a Project' }
+          %td
+            %div{ 'ng-show': 'projectSelected && !isReportSelected("custom_combined") && !isReportSelected("natural-language-analysis")' }
+              %p Please select a date. The report will be generated from that date up to today.
+              %input{ name: 'since_date', readonly: '', type: 'text', 'ng-model': 'dateRange', 'ng-init': "dateRange = '#{1.year.ago.strftime('%Y/%m/%d')}'", 'ng-calendar': 'single', style: 'background-color: transparent; border: 1px solid lightgray;' }
+              %br
+              .warning-tag
+                %p Please Note: Please check the date above
+
+      %div{ 'ng-show': 'projectSelected' }
+        %h5 Select the type of report your require. You can generate 1 report at a time.
+        %div
+          .report-option
+            %input{ id: 'transcript-report', type: 'radio', name: 'report_type', value: 'transcript', checked: 'checked', 'ng-click': 'setReportType("transcript")' }
+            %label{ for: 'transcript-report' } Transcript details
+            (includes the full transcript and transcription details for each video.)
+
+          .report-option
+            %input{ id: 'participants-report', type: 'radio', name: 'report_type', value: 'participants', 'ng-click': 'setReportType("participants")' }
+            %label{ for: 'participants-report' } Participant details
+            (includes all of the custom made information about a participant that is set up on the project.)
+
+          .report-option
+            %input{ id: 'participants-report-alternate', type: 'radio', name: 'report_type', value: 'participants_alternate', 'ng-click': 'setReportType("participants_alternate")' }
+            %label{ for: 'participants-report-alternate' } Participant details - full
+            (includes the same data as participants report but each filter option appears in a separate column)
+
+          .report-option
+            %input{ id: 'tags-report', type: 'radio', name: 'report_type', value: 'tags', 'ng-click': 'setReportType("tags")' }
+            %label{ for: 'tags-report' } Tag Detail
+            (includes all of the tags assigned to media, including the tag word count.)
+
+          .report-option
+            %input{ id: 'tags-average-report', type: 'radio', name: 'report_type', value: 'tags_average', 'ng-click': 'setReportType("tags")' }
+            %label{ for: 'tags-average-report' } Tag Summary
+            (tag report with average durations and word count)
+
+          .report-option
+            %input{ id: 'images-summary', type: 'radio', name: 'report_type', value: 'images_summary', 'ng-click': 'setReportType("tags")' }
+            %label{ for: 'images-summary' } Images Summary
+            (tag report with average durations and word count)
+
+          .report-option
+            %div
+            %input{ id: 'custom-combined-report', type: 'radio', name: 'report_type', value: 'custom_combined', 'ng-click': 'setReportType("custom_combined")' }
+            %label{ for: 'custom-combined-report' } Project Summary
+            (a synopsis of the project and its tag and word usage)
+
+          .report-option
+            %div
+            %input{ id: 'natural-language-analysis-report', type: 'radio', name: 'report_type', value: 'natural-language-analysis', 'ng-click': 'setReportType("natural-language-analysis")' }
+            %label{ for: 'natural-language-analysis-report' } Natural Language Analysis Summary
+            (Natural Language Analysis report with score and sentiment for each media)
+
+          .report-option
+            %div
+            %input{ id: 'transcript-downloads-report', type: 'radio', name: 'report_type', value: 'transcript-downloads', 'ng-click': 'setReportType("transcript-downloads")' }
+            %label{ for: 'transcript-downloads-report' } .docx transcript downloads
+            (Download all project transcripts in .docx format)
+
+          -# -----------------------------------------------------------------------------------
+          .custom-report-table{ 'ng-if': 'projectDataLoaded && isReportSelected("tags")', style: "width: 80%;" }
+            .custom-report-row{ 'ng-show': 'projectData.streams.length > 0' }
+              .custom-report-cell
+                %h4.section-title Streams
+            .custom-report-row{ 'ng-show': 'projectData.streams.length > 0' }
+              .custom-report-cell
+                %select{ name: 'stream_ids[]', 'ng-options': 'stream.name for stream in projectData.streams track by stream.id', 'ng-model': 'selectedStreams', 'ng-chosen-select-static': '', 'data-placeholder': 'If you want to only analyse content with specific streams enter them in here', multiple: true }
+
+          .custom-report-table{ 'ng-if': 'projectDataLoaded && isReportSelected("custom_combined")', style: "width: 98%;" }
+            .custom-report-row
+              .custom-report-cell
+                %h3 Filter Options
+          .custom-report-table{ 'ng-if': 'projectDataLoaded && isReportSelected("custom_combined")', style: "width: 98%;" }
+            .custom-report-row
+              .custom-report-cell{ 'ng-show': 'projectData.tags.length > 0' }
+                %h4.section-title Tags
+              .custom-report-cell{ 'ng-show': 'projectData.streams.length > 0' }
+                %h4.section-title Streams
+
+            .custom-report-row
+              .custom-report-cell{ 'ng-show': 'projectData.tags.length > 0' }
+                %select{ name: 'tag_ids[]', 'ng-options': 'tag.name for tag in projectData.tags track by tag.id', 'ng-model': 'selectedTags', 'ng-chosen-select-static': '', 'data-placeholder': 'If you want to only analyse content with specific tags enter them in here', multiple: true }
+              .custom-report-cell{ 'ng-show': 'projectData.streams.length > 0' }
+                %select{ name: 'stream_ids[]', 'ng-options': 'stream.name for stream in projectData.streams track by stream.id', 'ng-model': 'selectedStreams', 'ng-chosen-select-static': '', 'data-placeholder': 'If you want to only analyse content with specific streams enter them in here', multiple: true }
+
+          .custom-report-table{ 'ng-if': 'projectDataLoaded && isReportSelected("custom_combined")' }
+            .custom-report-row
+              .custom-report-cell{ 'ng-show': 'projectData.filters.length > 0' }
+                %h4.section-title Filters
+
+                .filter-group.custom-report-cell{ 'ng-repeat': 'filter in projectData.filters' }
+                  %p
+                    %label{ for: 'filter_options[{{filter.id}}]' } {{filter.name}}
+                    %select.chzn-select{ 'ng-chosen-select-static': '', 'ng-if': 'filter.multiple' , name: 'filter_options[{{filter.id}}][]', 'ng-options': 'value for value in filter.options track by value', 'ng-model': 'selectedFilters[filter.id]', include_blank: true, multiple: true }
+                    %select.chzn-select{ 'ng-chosen-select-static': '', 'ng-if': '!filter.multiple', name: 'filter_options[{{filter.id}}][]', 'ng-options': 'value for value in filter.options track by value', 'ng-model': 'selectedFilters[filter.id]', include_blank: true, multiple: false }
+          -# -----------------------------------------------------------------------------------
+
+        %button.btn.pull-right{ type: :submit, 'ng-click': 'getDownload()' } Download Report
+        .clear

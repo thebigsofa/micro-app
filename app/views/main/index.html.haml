@@ -1,0 +1,116 @@
+:css
+  .down-xx {
+    width: 100%;
+    max-width: 525px;
+  }
+  .down-xx .file-drop-zone{
+    width: 100%;
+    max-width: none;
+  }
+  .down-xx a {
+    color: rgba(55, 66, 73, 0.6);
+  }
+
+  .down-xx .update-form {
+    display: inline-block;
+    width: 100%;
+    margin: 2em 0;
+  }
+
+  .down-xx .update-form input[type="submit"]{
+    float: right;
+  }
+
+  .down-xx ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  button.progress-button[disabled], button.progress-button[disabled]:hover {
+    background: #1d9650;
+  }
+
+  .spreadsheet-uploader {
+    margin: 5px 0 10px 0;
+  }
+
+
+:javascript
+  angular.module('bulkUploader').controller('BulkUploadController', function($scope, $location, $interval, $timeout) {
+  });
+
+
+%div{ 'ng-controller': 'BulkUploadController', 'ng-cloak': '' }
+  .box-white{ 'ng-if': '!GridService.isLoaded' }
+    .indicator-loading
+
+  .box-white{ 'ng-if': 'GridService.isLoaded && hasRunningJobs()', 'ng-cloak': '' }
+    %h3 Update in progress
+    %p  Update in progress. Please wait for it to finish.
+
+  .box-white{ 'ng-if': 'GridService.isLoaded && !hasRunningJobs()', 'ng-cloak': '' }
+    %div{ 'ng-if': 'GridService.hasResults() || show_update_controls' }
+      %div
+      %h2 Update media
+      .down-xx
+        .update-form
+          %p To update media data for the media already on the system
+          = simple_form_for :bu_media, url: "/", method: :get do |f|
+            = f.input :start_date, label: "Start Date", placeholder: "01/01/2019", input_html: { class: "datepicker", autocomplete: "off" }
+            = f.input :stop_date, label: "Stop Date", placeholder: "03/03/2019", input_html: { class: "datepicker", autocomplete: "off" }
+            = f.button :submit, "Generate Bulk Sheet", class: "c-button c-button--accent"
+          :javascript
+            $(document).ready(function() {
+              $(".datepicker").datepicker({ dateFormat: 'dd/mm/yy' });
+              $(".datepicker").datepicker({ dateFormat: 'dd/mm/yy' });
+            });
+        %ul
+          %li
+            = render "spreadsheet_uploader"
+
+  .box-white{ 'ng-if': 'GridService.isLoaded && !hasRunningJobs()', 'ng-cloak': '' }
+    %div{ 'ng-if': 'GridService.hasResults() || show_update_controls' }
+      %div
+      %h2 Update participants
+      .down-xx
+        To update media data for the media already on the system
+        %ul
+          %li
+            %a{ href: "{{participant_spreadsheet_url}}" } Download Participant Spreadsheet
+            the spreadsheet, edit your data in there and upload it back for processing
+            = render "participant_spreadsheet_uploader"
+
+    %div{ 'ng-if': 'GridService.hasNoResults() && !show_update_controls' }
+      %h3 No data
+      %p There is no media in this project yet.
+
+  .box-white{ 'ng-if': 'failedUpdateJob() && GridService.isLoaded && !hasRunningJobs()' }
+    .jobs
+      .panel.panel-danger
+        .panel-heading
+          .fa.fa-exclamation-circle
+          There were some errors when trying to update media
+        .panel-body
+          %div{ "ng-if": "failedUpdateJob().failures.length > 0", "ng-repeat": "error in failedUpdateJob().failures" }
+            {{error.user_message}}
+          %div{ "ng-if": "failedUpdateJob().failures.length <= 0" }
+            We’re experiencing a problem with our system. Until it’s resolved, we cannot process your request. Please try again later, or if the problem persists, get in touch with your account manager.
+
+  .box-white{ 'ng-show': 'hasRunningJobs()', 'ng-cloak': '' }
+    .button.margin-top-20{ 'ng-cloak': '' }
+      %button.c-button.c-button--contained{ 'ng-disabled': 'hasRunningJobs()', 'ng-click': 'updateMedia()' }
+        %span.progress
+          %span.progress-inner.notransition{ style: "width: {{100*runningUpdateJob().progress/runningUpdateJob().progress_max}}%" }
+        %span.content
+          %span{ 'ng-if': '!hasRunningUpdateJob() && !sendingUpdateRequest && !validating' }
+            Save
+            %i.fa.fa-floppy-o
+          %span{ 'ng-if': 'validating' }
+            Validating...
+            %i.fa.fa-bolt
+          %span{ 'ng-if': 'hasRunningUpdateJob() && !sendingUpdateRequest' }
+            {{runningUpdateJob().stage}}
+            %span{"ng-if": "runningUpdateJob().progress_max > 0"} {{runningUpdateJob().progress}} of {{runningUpdateJob().progress_max}}
+          %span{ 'ng-if': 'sendingUpdateRequest' }
+            Processing...
+            %i.fa.fa-spin.fa-refresh
