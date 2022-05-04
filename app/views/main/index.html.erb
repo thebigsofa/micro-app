@@ -1,0 +1,130 @@
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js"></script>
+<script type="text/javascript">
+  window.getCookie = function(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // do things after the DOM loads partially
+    console.log("DOM is loaded");
+
+    const downloadForm = document.getElementById("download_form")
+    downloadForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const jwt = getCookie("current_jwt");
+      // console.log(jwt);
+
+      let start_date = event.target.elements["bu_media_start_date"].value;
+      let stop_date = event.target.elements["bu_media_stop_date"].value;
+      let url = `http://localhost:3000/projects/tcpro1/bulk_updates/spreadsheet?bu_media[start_date]=${start_date}&bu_media[stop_date]=${stop_date}`;
+      window.location.href = url;
+
+      // fetch("http://localhost:3000/api/v2/projects/tcpro1/bulk_updates", {
+      //   params: {
+      //     "bu_media[start_date]": ,
+      //     "bu_media[stop_date]": event.target.elements["bu_media_stop_date"].value
+      //   },
+      //   method: "GET",
+      //   headers: {
+      //     "Content-type": "application/json;charset=UTF-8",
+      //     "Authorization": `Bearer ${jwt}`
+      //   }
+      // })
+      // .then(response => response.blob())
+      // .then(data => {
+      //   if (window.navigator.msSaveOrOpenBlob) {
+      //     console.log("With navigator...")
+      //     window.navigator.msSaveBlob(data);
+      //   } else {
+      //     console.log("as link...")
+      //     var link = document.createElement("a");
+      //     link.href = window.URL.createObjectURL(data);
+      //     link.download = "file.csv";
+      //     document.body.appendChild(link); // Required for FF
+      //     link.click();
+      //   }
+      // });
+
+      // const res = await axios.get("http://localhost:3000/projects/tcpro1/bulk_updates/spreadsheet", {
+      // const res = axios.get("http://localhost:3000/api/v2/projects/tcpro1/bulk_updates", {
+      //   params: {
+      //     "bu_media[start_date]": event.target.elements["bu_media_start_date"].value,
+      //     "bu_media[stop_date]": event.target.elements["bu_media_stop_date"].value
+      //   },
+      //   headers: {
+      //     "Authorization": `Bearer ${jwt}`,
+      //     "Content-Type": "application/json"
+      //   }
+      // }).then((response) => {
+      //   console.log(response);
+      //   const url = window.URL.createObjectURL(new Blob([response.data]));
+      //   const link = document.createElement('a');
+      //   link.href = url;
+      //   link.setAttribute('download', 'file.csv'); //or any other extension
+      //   document.body.appendChild(link);
+      //   link.click();
+      // });
+
+      return false;
+    });
+  });
+</script>
+
+<div id="root">
+  <div>
+    <div>
+      <p>Logged in as <%= @current_user.id %>, Session expires: <%= Time.zone.at(@current_user.exp) %></p>
+      <p>TODO:</p>
+      <p>
+        <ul>
+          <li>CORS needs to be setup properly or app needs to be served from the same domain</li>
+          <li>Session Keep-Alive mechanism</li>
+          <li>Log out mechanism - easy</li>
+        </ul>
+      </p>
+    </div>
+  </div>
+
+  <form id="download_form" action="" accept-charset="UTF-8">
+    <div>
+      <div class="col-sm-9">
+        *Start Date: <input autocomplete="off" required="required" value="01/01/2020" placeholder="01/01/2019" type="text" name="bu_media[start_date]" id="bu_media_start_date" />
+      </div>
+    </div>
+    <div>
+      <div class="col-sm-9">
+        *Stop Date: <input autocomplete="off" required="required" value="01/01/2024" placeholder="03/03/2019" type="text" name="bu_media[stop_date]" id="bu_media_stop_date" />
+      </div>
+    </div>
+    <div>
+      <div>
+        <input type="submit" name="commit" value="Generate Bulk Sheet">
+      </div>
+    </div>
+  </form>
+</div>
+
+<style type="text/css">
+  #root {
+    margin: 10%;
+    margin-left: 20%;
+    margin-right: 20%;
+  }
+
+  div {
+    margin: 20px;
+  }
+</style>

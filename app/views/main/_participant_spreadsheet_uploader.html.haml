@@ -1,0 +1,45 @@
+:css
+  .file-drop-zone {
+    max-width: 38.5%;
+    background: #374249;
+    border-color: #374249;
+
+    padding: 10px;
+    color: white;
+    transition: background 0.2s;
+  }
+
+  .drop-button {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 10px;
+    border: 1px dashed white;
+
+    transition: color 0.2s;
+  }
+
+  .drop-button:hover {
+    color: #F3F5F6;
+  }
+
+  .drag-over {
+    color: #F3F5F6;
+    background-color: #374249;
+  }
+
+  .error {
+    color: #a94442;
+  }
+
+.spreadsheet-uploader
+  %form{ name: "myForm" }
+    .file-drop-zone{ "ngf-pattern": ".csv", name: "file", "ng-model": "spreadsheetFile", "ngf-max-size": "50MB", "ngf-model-invalid": "spreadsheetFile", "ngf-select": "uploadSpreadsheet($file, 'participant')", "ngf-drop": "uploadSpreadsheet($file, 'participant')", "ngf-drag-over-class": "drag-over" }
+      .drop-button
+        %span.fa.fa-hand-pointer-o
+        <br><strong>Click to select spreadsheet</strong> or drop one here<br>Max file size 50MB
+    %span.progress{ "ng-if": "spreadsheetFile.progress > 0" } Uploading spreadsheet: {{spreadsheetFile.progress}}%
+    %i.error{ "ng-show": "myForm.file.$error.maxSize"}
+      File too large {{spreadsheetFile.size / 1000000|number:1}}MB. Max 50MB
+    %i.error{ "ng-show": "myForm.file.$error.pattern"}
+      Invalid file type. Please upload an csv file.
