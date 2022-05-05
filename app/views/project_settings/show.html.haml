@@ -1,6 +1,7 @@
 %p= @current_user.inspect
 %p= cookies[:current_jwt]
 
+<script src="https://unpkg.com/htm@2.2.1" crossorigin></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
@@ -13,7 +14,9 @@
   document.addEventListener("DOMContentLoaded", () => {
     var projectsSettingsContainer = document.querySelector("#projects-setup-container");
 
-    var projectUid = window.location.pathname.split("/")[1]
+    const html = htm.bind(React.createElement);
+
+    // var projectUid = window.location.pathname.split("/")[1]
 
     class TodoApp extends React.Component {
       constructor(props) {
@@ -28,27 +31,45 @@
         }
       }
 
+      sayHello(itemId) {
+        // this.state.items.find(item => item.id == itemId);
+        var index = this.state.items.findIndex(item => item.id == itemId);
+        this.state.items[index].done = !this.state.items[index].done;
+
+        this.setState({ "items": this.state.items });
+      }
+
       render() {
-        // return (
-        //   <h1>Greetings, {this.props.name}!</h1>
-        // );
+        // var olChildrenLis = this.state.items.map(function(item) {
+        //   var span = React.createElement("span", { "class": (item.done ? "done" : "") }, item.text);
+        //   var input = React.createElement("input", { "type": "checkbox", "checked": (item.done) })
+        //   var label = React.createElement("label", null, input, span);
+        //   var li = React.createElement('h2', { "key": item.id }, label);
         //
-        // return React.createElement('h1', null, 'Greetings, ' + this.props.name + '!');
+        //   return li;
+        // });
+        //
+        // var h2 = React.createElement('h2', null, "Todos:");
+        // var ol = React.createElement('ol', null, olChildrenLis);
+        // var div = React.createElement('div', null, h2, ol);
+        //
+        // return div;
 
-        var olChildrenLis = this.state.items.map(function(item) {
-          var span = React.createElement("span", { "class": (item.done ? "done" : "") }, item.text);
-          var input = React.createElement("input", { "type": "checkbox", "checked": (item.done) })
-          var label = React.createElement("label", null, input, span);
-          var li = React.createElement('h2', { "key": item.id }, label);
-
-          return li;
-        });
-
-        var h2 = React.createElement('h2', null, "Todos:");
-        var ol = React.createElement('ol', null, olChildrenLis);
-        var div = React.createElement('div', null, h2, ol);
-
-        return div;
+        return html`
+          <div>
+            <h2>Todos:</h2>
+              <ol>
+                ${this.state.items.map((item) => (
+                  html`
+                    <li key=${item.id}>
+                      <input type="checkbox" checked=${item.done} onClick=${() => this.sayHello(item.id)} />
+                      <span className=${item.done ? "done" : ""}>${item.text}</span>
+                    </li>
+                  `
+                ))}
+              </ol>
+            </div>
+          `;
 
         // return (
         //   <div>
@@ -65,7 +86,6 @@
         //     </ol>
         //   </div>
         // )
-        // return React.createElement('h1', null, 'Greetings, ' + this.props.name + '!');
       }
     }
 
