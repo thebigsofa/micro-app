@@ -1,0 +1,78 @@
+%p= @current_user.inspect
+%p= cookies[:current_jwt]
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+:css
+  .done {
+    text-decoration: line-through;
+  }
+
+:javascript
+  document.addEventListener("DOMContentLoaded", () => {
+    var projectsSettingsContainer = document.querySelector("#projects-setup-container");
+
+    var projectUid = window.location.pathname.split("/")[1]
+
+    class TodoApp extends React.Component {
+      constructor(props) {
+        super(props)
+        this.state = {
+          items: [
+            { id: 0, text: "Learn JavaScript", done: false },
+            { id: 1, text: "Learn React", done: false },
+            { id: 2, text: "Play around in JSFiddle", done: true },
+            { id: 3, text: "Build something awesome", done: true }
+          ]
+        }
+      }
+
+      render() {
+        // return (
+        //   <h1>Greetings, {this.props.name}!</h1>
+        // );
+        //
+        // return React.createElement('h1', null, 'Greetings, ' + this.props.name + '!');
+
+        var olChildrenLis = this.state.items.map(function(item) {
+          var span = React.createElement("span", { "class": (item.done ? "done" : "") }, item.text);
+          var input = React.createElement("input", { "type": "checkbox", "checked": (item.done) })
+          var label = React.createElement("label", null, input, span);
+          var li = React.createElement('h2', { "key": item.id }, label);
+
+          return li;
+        });
+
+        var h2 = React.createElement('h2', null, "Todos:");
+        var ol = React.createElement('ol', null, olChildrenLis);
+        var div = React.createElement('div', null, h2, ol);
+
+        return div;
+
+        // return (
+        //   <div>
+        //     <h2>Todos:</h2>
+        //     <ol>
+        //     {this.state.items.map(item => (
+        //       <li key={item.id}>
+        //         <label>
+        //           <input type="checkbox" disabled readOnly checked={item.done} />
+        //           <span className={item.done ? "done" : ""}>{item.text}</span>
+        //         </label>
+        //       </li>
+        //     ))}
+        //     </ol>
+        //   </div>
+        // )
+        // return React.createElement('h1', null, 'Greetings, ' + this.props.name + '!');
+      }
+    }
+
+    var todoApp = React.createElement(TodoApp);
+
+    ReactDOM.render(todoApp, projectsSettingsContainer);
+  });
+
+
+#projects-setup-container

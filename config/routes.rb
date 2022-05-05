@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   get "/" => "main#index"
   get "/data_reports" => "data_reports#index"
+  get "/:project_uid/settings" => "project_settings#show"
 
   # get "jwt/authentication" => "jwt#jwt_authentication"
   # get "sso/sign_in_with_saml" => "sso#sign_in_with_saml"
