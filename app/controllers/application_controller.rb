@@ -50,9 +50,7 @@ class ApplicationController < ActionController::Base
   end
 
   def referer
-    params[:return_url].presence || params[:RelayState].presence || URI.parse(request.referer).to_s
-  rescue
-    "/"
+    URI.parse(request.url).to_s rescue "/"
   end
 
   def user_signed_in?
